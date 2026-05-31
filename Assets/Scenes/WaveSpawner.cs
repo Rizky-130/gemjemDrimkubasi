@@ -17,7 +17,9 @@ public class WaveSpawner : MonoBehaviour
     [Header("Spawn Settings")]
     public List<GameObject> enemiesToSpawn = new List<GameObject>();
     public Transform[] spawnLocation;
-    public int spawnIndex;
+
+    [Tooltip("Random area around each spawn point.")]
+    public float randomSpawnRadius = 1.5f;
 
     [Header("Timing")]
     public float waveDuration = 20f;
@@ -105,11 +107,31 @@ public class WaveSpawner : MonoBehaviour
         GameObject enemyPrefab = enemiesToSpawn[0];
         enemiesToSpawn.RemoveAt(0);
 
-        Transform selectedSpawn = spawnLocation[spawnIndex];
+        if (enemyPrefab == null)
+        {
+            Debug.LogWarning("Enemy prefab is missing. Skipping spawn.");
+            return;
+        }
+
+        Transform selectedSpawn = GetRandomSpawnPoint();
+
+        if (selectedSpawn == null)
+        {
+            Debug.LogError("No valid spawn point found!");
+            return;
+        }
+
+        Vector2 randomOffset = Random.insideUnitCircle * randomSpawnRadius;
+
+        Vector3 spawnPosition = selectedSpawn.position + new Vector3(
+            randomOffset.x,
+            randomOffset.y,
+            0f
+        );
 
         GameObject enemy = Instantiate(
             enemyPrefab,
-            selectedSpawn.position,
+            spawnPosition,
             Quaternion.identity
         );
 
@@ -124,14 +146,22 @@ public class WaveSpawner : MonoBehaviour
 
         tracker.Setup(this);
 
-        spawnIndex++;
+        Debug.Log("Enemy spawned randomly. Remaining to spawn: " + enemiesToSpawn.Count);
+    }
 
-        if (spawnIndex >= spawnLocation.Length)
+    private Transform GetRandomSpawnPoint()
+    {
+        for (int i = 0; i < 20; i++)
         {
-            spawnIndex = 0;
+            int randomIndex = Random.Range(0, spawnLocation.Length);
+
+            if (spawnLocation[randomIndex] != null)
+            {
+                return spawnLocation[randomIndex];
+            }
         }
 
-        Debug.Log("Enemy spawned. Remaining to spawn: " + enemiesToSpawn.Count);
+        return null;
     }
 
     public void GenerateWave()
@@ -148,7 +178,7 @@ public class WaveSpawner : MonoBehaviour
 
         if (enemiesToSpawn.Count <= 0)
         {
-            Debug.LogWarning("No enemies generated. Check enemy costs.");
+            Debug.LogWarning("No enemies generated. Check enemy prefabs and enemy costs.");
             isSpawningWave = false;
             StartNextWaveTimer();
             return;
@@ -165,6 +195,13 @@ public class WaveSpawner : MonoBehaviour
     {
         List<GameObject> generatedEnemies = new List<GameObject>();
 
+        if (enemies == null || enemies.Count <= 0)
+        {
+            Debug.LogError("No enemy types assigned in WaveSpawner!");
+            enemiesToSpawn = generatedEnemies;
+            return;
+        }
+
         int safetyLoop = 0;
 
         while (waveValue > 0 && generatedEnemies.Count < maxEnemiesPerWave)
@@ -177,41 +214,26 @@ public class WaveSpawner : MonoBehaviour
                 break;
             }
 
-            int randEnemyId = Random.Range(0, enemies.Count);
-            Enemy selectedEnemy = enemies[randEnemyId];
+            List<Enemy> affordableEnemies = new List<Enemy>();
 
-            if (selectedEnemy.enemyPrefab == null)
-                continue;
-
-            if (selectedEnemy.cost <= 0)
+            for (int i = 0; i < enemies.Count; i++)
             {
-                Debug.LogWarning("Enemy cost must be more than 0.");
-                continue;
-            }
-
-            if (waveValue - selectedEnemy.cost >= 0)
-            {
-                generatedEnemies.Add(selectedEnemy.enemyPrefab);
-                waveValue -= selectedEnemy.cost;
-            }
-            else
-            {
-                bool canAffordAnyEnemy = false;
-
-                for (int i = 0; i < enemies.Count; i++)
+                if (enemies[i].enemyPrefab != null && enemies[i].cost > 0 && enemies[i].cost <= waveValue)
                 {
-                    if (enemies[i].cost <= waveValue)
-                    {
-                        canAffordAnyEnemy = true;
-                        break;
-                    }
-                }
-
-                if (!canAffordAnyEnemy)
-                {
-                    break;
+                    affordableEnemies.Add(enemies[i]);
                 }
             }
+
+            if (affordableEnemies.Count <= 0)
+            {
+                break;
+            }
+
+            int randEnemyId = Random.Range(0, affordableEnemies.Count);
+            Enemy selectedEnemy = affordableEnemies[randEnemyId];
+
+            generatedEnemies.Add(selectedEnemy.enemyPrefab);
+            waveValue -= selectedEnemy.cost;
         }
 
         enemiesToSpawn = generatedEnemies;
