@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 8223798897883450350}
   - component: {fileID: 8997858518677634915}
   - component: {fileID: 2141465164239610778}
+  - component: {fileID: -2342525469263312382}
   m_Layer: 0
   m_Name: Triangle
   m_TagString: Untagged
@@ -102,6 +103,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHP: 3
+  currentHP: 0
 --- !u!114 &8783496523444917093
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -203,3 +205,22 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &-2342525469263312382
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6382937526954205857}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94f07fd5548217d44ab0f81f58a5970a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hitColor: {r: 1, g: 1, b: 1, a: 1}
+  glowColor: {r: 1, g: 0, b: 0, a: 1}
+  flashTime: 0.06
+  glowTime: 0.12
+  scaleAmount: 1.12
+  bloodParticlePrefab: {fileID: 1109375835757817913, guid: 0cfb083947a62824585bd5a3065a6468, type: 3}
+  bloodZOffset: -0.1

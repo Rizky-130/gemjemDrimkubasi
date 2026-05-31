@@ -2,8 +2,17 @@ using UnityEngine;
 
 public class EnemyHealth : MonoBehaviour
 {
+    [Header("Enemy Health")]
     public int maxHP = 3;
-    private int currentHP;
+    public int currentHP;
+
+    private bool isDead = false;
+    private EnemyHitEffect hitEffect;
+
+    private void Awake()
+    {
+        hitEffect = GetComponent<EnemyHitEffect>();
+    }
 
     private void Start()
     {
@@ -12,9 +21,17 @@ public class EnemyHealth : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
+        if (isDead)
+            return;
+
         currentHP -= damage;
 
-        Debug.Log(gameObject.name + " took damage. HP: " + currentHP);
+        if (hitEffect != null)
+        {
+            hitEffect.PlayHitEffect();
+        }
+
+        Debug.Log(gameObject.name + " took damage! HP: " + currentHP);
 
         if (currentHP <= 0)
         {
@@ -24,7 +41,10 @@ public class EnemyHealth : MonoBehaviour
 
     private void Die()
     {
+        isDead = true;
+
         Debug.Log(gameObject.name + " died.");
+
         Destroy(gameObject);
     }
 }
