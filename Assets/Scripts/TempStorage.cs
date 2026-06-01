@@ -32,7 +32,7 @@ public class TempStorage : MonoBehaviour, IDropHandler
 
             Image slotImage = slotObj.GetComponent<Image>();
             if (slotImage != null)
-                slotImage.raycastTarget = true; // ← harus true agar drag terdeteksi
+                slotImage.raycastTarget = true;
 
             // Tambah TempStorageSlot script
             slotObj.AddComponent<TempStorageSlot>();
@@ -46,7 +46,7 @@ public class TempStorage : MonoBehaviour, IDropHandler
             if (storedItems[i] == null) return true;
         return false;
     }
-    // Ini yang dipanggil temanmu saat enemy drop item
+    // Ini yang dipanggil saat enemy drop item
     public bool SpawnItemToTempStorage(InventoryItem item)
     {
         if (!HasSpace())
