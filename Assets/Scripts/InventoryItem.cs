@@ -1,17 +1,17 @@
 using UnityEngine;
 
-public enum ItemTier 
-{ 
-    Bronze, // Tier 1
-    Silver, // Tier 2
-    Gold    // Tier 3
+public enum ItemTier
+{
+    Bronze,
+    Silver,
+    Gold
 }
 
-public enum ItemShape 
-{ 
-    OneBlock, 
-    TwoBlock, 
-    LShape 
+public enum ItemShape
+{
+    OneBlock,
+    TwoBlock,
+    LShape
 }
 
 public enum ItemBlockType
@@ -39,33 +39,10 @@ public class InventoryItem
     public ItemShape shapeType;
     public ItemBlockType blockType;
 
-    [Header("Block Stats")]
     public int damageBonus;
     public float fireRateBonus;
     public int hpBonus;
     public int hmValue;
-
-    public int score => tier switch
-    {
-        ItemTier.Bronze => 10,
-        ItemTier.Silver => 30,
-        ItemTier.Gold => 90,
-        _ => 0
-    };
-
-    public InventoryItem(string itemName, bool[,] shape)
-    {
-        this.itemName = itemName;
-        this.shape = shape;
-    }
-
-    public InventoryItem(string itemName, ItemShape shapeType, ItemTier tier = ItemTier.Bronze)
-    {
-        this.itemName = itemName;
-        this.shapeType = shapeType;
-        this.tier = tier;
-        this.shape = GetShapeFromType(shapeType);
-    }
 
     public InventoryItem(string itemName, ItemShape shapeType, ItemTier tier, ItemBlockType blockType)
     {
@@ -88,11 +65,12 @@ public class InventoryItem
 
     private static string GetItemName(ItemBlockType blockType, ItemTier tier)
     {
-        string tierName = "";
+        string tierName = "Tier 1";
 
-        if (tier == ItemTier.Bronze) tierName = "Tier 1";
-        else if (tier == ItemTier.Silver) tierName = "Tier 2";
-        else if (tier == ItemTier.Gold) tierName = "Tier 3";
+        if (tier == ItemTier.Silver)
+            tierName = "Tier 2";
+        else if (tier == ItemTier.Gold)
+            tierName = "Tier 3";
 
         if (blockType == ItemBlockType.LBlock)
             return "Block L " + tierName;
@@ -141,7 +119,7 @@ public class InventoryItem
                 hpBonus = 500;
                 hmValue = 25;
             }
-            else if (tier == ItemTier.Gold)
+            else
             {
                 damageBonus = 600;
                 hpBonus = 1750;
@@ -162,7 +140,7 @@ public class InventoryItem
                 hpBonus = 350;
                 hmValue = 20;
             }
-            else if (tier == ItemTier.Gold)
+            else
             {
                 damageBonus = 325;
                 hpBonus = 1150;
@@ -183,7 +161,7 @@ public class InventoryItem
                 hpBonus = 250;
                 hmValue = -20;
             }
-            else if (tier == ItemTier.Gold)
+            else
             {
                 fireRateBonus = 3.0f;
                 hpBonus = 800;
@@ -204,7 +182,7 @@ public class InventoryItem
                 hpBonus = 175;
                 hmValue = -30;
             }
-            else if (tier == ItemTier.Gold)
+            else
             {
                 fireRateBonus = 1.5f;
                 hpBonus = 600;
@@ -215,29 +193,35 @@ public class InventoryItem
 
     public static bool[,] GetShapeFromType(ItemShape shapeType)
     {
-        return shapeType switch
+        if (shapeType == ItemShape.OneBlock)
         {
-            ItemShape.OneBlock => new bool[,] 
-            { 
-                { true } 
-            },
+            return new bool[,]
+            {
+                { true }
+            };
+        }
 
-            ItemShape.TwoBlock => new bool[,] 
-            { 
-                { true, true } 
-            },
+        if (shapeType == ItemShape.TwoBlock)
+        {
+            return new bool[,]
+            {
+                { true, true }
+            };
+        }
 
-            ItemShape.LShape => new bool[,]
+        if (shapeType == ItemShape.LShape)
+        {
+            return new bool[,]
             {
                 { true, false },
                 { true, false },
                 { true, true  }
-            },
+            };
+        }
 
-            _ => new bool[,] 
-            { 
-                { true } 
-            }
+        return new bool[,]
+        {
+            { true }
         };
     }
 
@@ -275,25 +259,5 @@ public class InventoryItem
         }
 
         return copy;
-    }
-
-    public void DebugShape()
-    {
-        string output = "";
-
-        int rows = shape.GetLength(0);
-        int cols = shape.GetLength(1);
-
-        for (int y = 0; y < rows; y++)
-        {
-            for (int x = 0; x < cols; x++)
-            {
-                output += shape[y, x] ? "[X]" : "[ ]";
-            }
-
-            output += "\n";
-        }
-
-        Debug.Log(output);
     }
 }
