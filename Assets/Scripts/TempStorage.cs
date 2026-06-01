@@ -46,7 +46,23 @@ public class TempStorage : MonoBehaviour, IDropHandler
             if (storedItems[i] == null) return true;
         return false;
     }
+    // Ini yang dipanggil temanmu saat enemy drop item
+    public bool SpawnItemToTempStorage(InventoryItem item)
+    {
+        if (!HasSpace())
+        {
+            Debug.Log("Temp storage penuh!");
+            return false;
+        }
 
+        // Buat view
+        Inventory.Instance.CreateItemViewPublic(item);
+        Inventory.Instance.UpdateItemViewSize(item);
+
+        // Simpan ke slot
+        bool stored = StoreItem(item);
+        return stored;
+    }
     public int GetEmptySlotIndex()
     {
         for (int i = 0; i < capacity; i++)

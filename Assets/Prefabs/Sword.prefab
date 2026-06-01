@@ -89,6 +89,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 092eb00305141954b9a4e38cc172c06e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isStoredToTemp: 0
+  isTrashed: 0
 --- !u!225 &8379610499003884189
 CanvasGroup:
   m_ObjectHideFlags: 0

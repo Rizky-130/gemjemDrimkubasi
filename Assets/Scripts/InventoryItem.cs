@@ -1,5 +1,8 @@
 using UnityEngine;
 
+
+public enum ItemTier { Bronze, Silver, Gold }
+public enum ItemShape { OneBlock, TwoBlock, LShape }
 public class InventoryItem
 {
     public InventoryItemView view;
@@ -11,6 +14,15 @@ public class InventoryItem
     public int originY;
     public bool isInTempStorage = false;  // ← tambah
     public int tempStorageIndex = -1;
+    public ItemTier tier;
+    public ItemShape shapeType;
+     public int score => tier switch
+    {
+        ItemTier.Bronze => 10,
+        ItemTier.Silver => 30,
+        ItemTier.Gold   => 90,
+        _               => 0
+    };
 
     public InventoryItem(
         string itemName,
@@ -18,6 +30,28 @@ public class InventoryItem
     {
         this.itemName = itemName;
         this.shape = shape;
+    }
+     public InventoryItem(string itemName, ItemShape shapeType, ItemTier tier = ItemTier.Bronze)
+    {
+        this.itemName  = itemName;
+        this.shapeType = shapeType;
+        this.tier      = tier;
+        this.shape     = GetShapeFromType(shapeType);
+    }
+    public static bool[,] GetShapeFromType(ItemShape shapeType)
+    {
+        return shapeType switch
+        {
+            ItemShape.OneBlock => new bool[,] { { true } },
+            ItemShape.TwoBlock => new bool[,] { { true, true } },
+            ItemShape.LShape   => new bool[,]
+            {
+                { true, false },
+                { true, false },
+                { true, true  }
+            },
+            _ => new bool[,] { { true } }
+        };
     }
 
     public void Rotate()

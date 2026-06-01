@@ -1,9 +1,11 @@
 using UnityEngine;
-using UnityEngine.EventSystems; // ← tambah ini
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 public class Inventory : MonoBehaviour
 {
     public static Inventory Instance;
+    public ItemSpriteConfig spriteConfig;
     public int width = 3;
     public int height = 3;
 
@@ -40,8 +42,10 @@ public class Inventory : MonoBehaviour
             }
         }
 
-        InventoryItem sword = new InventoryItem("Sword", new bool[,] { { true, true } });
-        InventoryItem potion = new InventoryItem("Potion", new bool[,] { { true } });
+        // contoh pemakaian
+        InventoryItem sword = new InventoryItem("Sword", ItemShape.TwoBlock, ItemTier.Bronze);
+        InventoryItem potion = new InventoryItem("Potion", ItemShape.OneBlock, ItemTier.Bronze);
+        InventoryItem Cangkul = new InventoryItem("Cangkul", ItemShape.LShape, ItemTier.Bronze);
 
         PlaceItem(sword, 0, 0);
         PlaceItem(potion, 2, 2);
@@ -121,6 +125,27 @@ public class Inventory : MonoBehaviour
         InventoryItemView view = obj.GetComponent<InventoryItemView>();
         view.item = item;
         item.view = view;
+
+        // Set sprite sesuai shapeType
+        if (spriteConfig != null)
+        {
+            Image img = obj.GetComponent<Image>();
+            if (img != null)
+            {
+                Sprite sprite = spriteConfig.GetSprite(item.shapeType);
+
+                if (sprite != null)
+                    img.sprite = sprite;
+                else
+                    img.color = spriteConfig.GetColor(item.shapeType); // ← pakai warna kalau sprite null
+            }
+        }
+    }
+
+    // Expose untuk UpgradeSystem
+    public void CreateItemViewPublic(InventoryItem item)
+    {
+        CreateItemView(item);
     }
 
     public void UpdateItemViewSize(InventoryItem item)
