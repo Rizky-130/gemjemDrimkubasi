@@ -7,11 +7,14 @@ public class EnemyHealth : MonoBehaviour
     public int currentHP;
 
     private bool isDead = false;
+
     private EnemyHitEffect hitEffect;
+    private EnemyBlockDropper blockDropper;
 
     private void Awake()
     {
         hitEffect = GetComponent<EnemyHitEffect>();
+        blockDropper = GetComponent<EnemyBlockDropper>();
     }
 
     private void Start()
@@ -41,7 +44,15 @@ public class EnemyHealth : MonoBehaviour
 
     private void Die()
     {
+        if (isDead)
+            return;
+
         isDead = true;
+
+        if (blockDropper != null)
+        {
+            blockDropper.DropBlock();
+        }
 
         Debug.Log(gameObject.name + " died.");
 

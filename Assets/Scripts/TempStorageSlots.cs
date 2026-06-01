@@ -4,13 +4,14 @@ using UnityEngine.EventSystems;
 public class TempStorageSlot : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     public InventoryItem storedItem;
+
     private InventoryItemView itemView;
-    private InventoryItemView activeDragView; // ← tambah ini
+    private InventoryItemView activeDragView;
 
     public void SetItem(InventoryItem item)
     {
         storedItem = item;
-        itemView = item?.view;
+        itemView = item != null ? item.view : null;
     }
 
     public void ClearItem()
@@ -21,40 +22,63 @@ public class TempStorageSlot : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (eventData.button != PointerEventData.InputButton.Left) return;
-        if (itemView == null) return;
+        if (eventData.button != PointerEventData.InputButton.Left)
+            return;
 
-        // Simpan reference SEBELUM RemoveFromStorage mengubah parent
-        activeDragView = itemView;
-        ClearItem(); // clear slot sekarang
+        if (storedItem == null)
+            return;
+
+        if (storedItem.view == null)
+            return;
+
+        InventoryItem itemToDrag = storedItem;
+        activeDragView = itemToDrag.view;
+
+        if (TempStorage.Instance != null)
+        {
+            TempStorage.Instance.RemoveFromStorage(itemToDrag);
+        }
+        else
+        {
+            ClearItem();
+        }
 
         ExecuteEvents.Execute(
             activeDragView.gameObject,
             eventData,
-            ExecuteEvents.beginDragHandler);
+            ExecuteEvents.beginDragHandler
+        );
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (eventData.button != PointerEventData.InputButton.Left) return;
-        if (activeDragView == null) return;
+        if (eventData.button != PointerEventData.InputButton.Left)
+            return;
+
+        if (activeDragView == null)
+            return;
 
         ExecuteEvents.Execute(
             activeDragView.gameObject,
             eventData,
-            ExecuteEvents.dragHandler);
+            ExecuteEvents.dragHandler
+        );
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        if (eventData.button != PointerEventData.InputButton.Left) return;
-        if (activeDragView == null) return;
+        if (eventData.button != PointerEventData.InputButton.Left)
+            return;
+
+        if (activeDragView == null)
+            return;
 
         ExecuteEvents.Execute(
             activeDragView.gameObject,
             eventData,
-            ExecuteEvents.endDragHandler);
+            ExecuteEvents.endDragHandler
+        );
 
-        activeDragView = null; // reset setelah selesai
+        activeDragView = null;
     }
 }

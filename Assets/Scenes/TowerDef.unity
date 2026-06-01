@@ -415,8 +415,38 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6382937526954205857, guid: 7f0f84bbbadd92949b14a04c79c4b914, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 472313765}
   m_SourcePrefab: {fileID: 100100000, guid: 7f0f84bbbadd92949b14a04c79c4b914, type: 3}
+--- !u!1 &472313764 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6382937526954205857, guid: 7f0f84bbbadd92949b14a04c79c4b914, type: 3}
+  m_PrefabInstance: {fileID: 472313763}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &472313765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 472313764}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8449de47309e4e40bedc6f90cc51fda, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dropChance: 1
+  possibleDrops:
+  - blockType: 0
+    weight: 1
+  - blockType: 1
+    weight: 1
+  - blockType: 2
+    weight: 1
+  - blockType: 3
+    weight: 1
 --- !u!1 &880653395
 GameObject:
   m_ObjectHideFlags: 0

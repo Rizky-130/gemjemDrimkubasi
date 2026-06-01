@@ -137,6 +137,13 @@ public class WaveSpawner : MonoBehaviour
 
         spawnedEnemies.Add(enemy);
 
+        EnemyBlockDropper blockDropper = enemy.GetComponent<EnemyBlockDropper>();
+
+        if (blockDropper != null)
+        {
+            blockDropper.Setup(this);
+        }
+
         EnemyWaveTracker tracker = enemy.GetComponent<EnemyWaveTracker>();
 
         if (tracker == null)
