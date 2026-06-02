@@ -10,12 +10,13 @@ public class Bullet : MonoBehaviour
     public float extraScreenMargin = 0.1f;
 
     private Camera mainCamera;
+    private bool hasHit = false;
 
     private void Start()
     {
         mainCamera = Camera.main;
 
-        // Backup destroy timer, just in case
+        // Backup destroy timer
         Destroy(gameObject, lifeTime);
     }
 
@@ -45,12 +46,33 @@ public class Bullet : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        EnemyHealth enemy = collision.GetComponent<EnemyHealth>();
+        if (hasHit)
+            return;
+
+        // 1. If bullet hits HM block drop, collect it into TempStorage
+        HMBlockWorldDropper hmBlock = collision.GetComponentInParent<HMBlockWorldDropper>();
+
+        if (hmBlock != null)
+        {
+            hasHit = true;
+
+            hmBlock.CollectToTempStorage();
+
+            Destroy(gameObject);
+            return;
+        }
+
+        // 2. If bullet hits enemy, damage enemy
+        EnemyHealth enemy = collision.GetComponentInParent<EnemyHealth>();
 
         if (enemy != null)
         {
+            hasHit = true;
+
             enemy.TakeDamage(damage);
+
             Destroy(gameObject);
+            return;
         }
     }
 }

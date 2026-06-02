@@ -1,22 +1,48 @@
 using UnityEngine;
 
+public enum ItemTier
+{
+    Bronze, // Tier 1
+    Silver, // Tier 2
+    Gold    // Tier 3
+}
 
-public enum ItemTier { Bronze, Silver, Gold }
-public enum ItemShape { OneBlock, TwoBlock, LShape }
+public enum ItemShape
+{
+    OneBlock,
+    TwoBlock,
+    LShape
+}
+
+public enum ItemBlockType
+{
+    BlockL,
+    BlockIPlus,
+    BlockIMinus,
+    BlockDot
+}
+
 public class InventoryItem
 {
     public InventoryItemView view;
+
     public string itemName;
 
     public bool[,] shape;
 
     public int originX;
     public int originY;
-    public bool isInTempStorage = false;  // ← tambah
+
+    public bool isInTempStorage = false;
     public int tempStorageIndex = -1;
+
     public ItemTier tier;
     public ItemShape shapeType;
-     public int score => tier switch
+    public ItemBlockType blockType;
+
+    public HMItemStats stats;
+
+    public int score => tier switch
     {
         ItemTier.Bronze => 10,
         ItemTier.Silver => 30,
@@ -24,33 +50,87 @@ public class InventoryItem
         _               => 0
     };
 
-    public InventoryItem(
-        string itemName,
-        bool[,] shape)
+    public InventoryItem(string itemName, bool[,] shape)
     {
         this.itemName = itemName;
         this.shape = shape;
+
+        this.blockType = ItemBlockType.BlockDot;
+        this.shapeType = ItemShape.OneBlock;
+        this.tier = ItemTier.Bronze;
+        this.stats = HMItemDatabase.GetStats(blockType, tier);
     }
-     public InventoryItem(string itemName, ItemShape shapeType, ItemTier tier = ItemTier.Bronze)
+
+    public InventoryItem(string itemName, ItemShape shapeType, ItemTier tier = ItemTier.Bronze)
     {
-        this.itemName  = itemName;
+        this.itemName = itemName;
         this.shapeType = shapeType;
-        this.tier      = tier;
-        this.shape     = GetShapeFromType(shapeType);
+        this.tier = tier;
+
+        this.blockType = GetDefaultBlockTypeFromShape(shapeType);
+        this.shape = GetShapeFromType(shapeType);
+        this.stats = HMItemDatabase.GetStats(blockType, tier);
     }
+
+    public InventoryItem(string itemName, ItemBlockType blockType, ItemTier tier = ItemTier.Bronze)
+    {
+        this.itemName = itemName;
+        this.blockType = blockType;
+        this.tier = tier;
+
+        this.shapeType = GetShapeFromBlockType(blockType);
+        this.shape = GetShapeFromType(shapeType);
+        this.stats = HMItemDatabase.GetStats(blockType, tier);
+    }
+
+    public static ItemShape GetShapeFromBlockType(ItemBlockType blockType)
+    {
+        return blockType switch
+        {
+            ItemBlockType.BlockL      => ItemShape.LShape,
+            ItemBlockType.BlockIPlus  => ItemShape.TwoBlock,
+            ItemBlockType.BlockIMinus => ItemShape.TwoBlock,
+            ItemBlockType.BlockDot    => ItemShape.OneBlock,
+            _                         => ItemShape.OneBlock
+        };
+    }
+
+    public static ItemBlockType GetDefaultBlockTypeFromShape(ItemShape shapeType)
+    {
+        return shapeType switch
+        {
+            ItemShape.LShape   => ItemBlockType.BlockL,
+            ItemShape.TwoBlock => ItemBlockType.BlockIPlus,
+            ItemShape.OneBlock => ItemBlockType.BlockDot,
+            _                  => ItemBlockType.BlockDot
+        };
+    }
+
     public static bool[,] GetShapeFromType(ItemShape shapeType)
     {
         return shapeType switch
         {
-            ItemShape.OneBlock => new bool[,] { { true } },
-            ItemShape.TwoBlock => new bool[,] { { true, true } },
-            ItemShape.LShape   => new bool[,]
+            ItemShape.OneBlock => new bool[,]
+            {
+                { true }
+            },
+
+            ItemShape.TwoBlock => new bool[,]
+            {
+                { true, true }
+            },
+
+            ItemShape.LShape => new bool[,]
             {
                 { true, false },
                 { true, false },
                 { true, true  }
             },
-            _ => new bool[,] { { true } }
+
+            _ => new bool[,]
+            {
+                { true }
+            }
         };
     }
 
@@ -101,9 +181,7 @@ public class InventoryItem
         {
             for (int x = 0; x < cols; x++)
             {
-                output += shape[y, x]
-                    ? "[X]"
-                    : "[ ]";
+                output += shape[y, x] ? "[X]" : "[ ]";
             }
 
             output += "\n";
