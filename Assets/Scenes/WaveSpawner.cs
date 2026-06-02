@@ -112,6 +112,11 @@ public class WaveSpawner : MonoBehaviour
             " | HP: " + currentWaveData.enemyHP +
             " | Damage: " + currentWaveData.enemyDamage
         );
+
+        if (GameSFXManager.Instance != null)
+        {
+            GameSFXManager.Instance.PlayWaveStart();
+        }
     }
 
     private void GenerateEnemiesForWave(int quantity)
@@ -358,6 +363,11 @@ public class WaveSpawner : MonoBehaviour
     {
         Debug.Log("Wave " + currWave + " cleared!");
 
+        if (GameSFXManager.Instance != null)
+        {
+            GameSFXManager.Instance.PlayWaveOver();
+        }
+
         if (currWave >= waves.Count)
         {
             FinishAllWaves();
@@ -424,16 +434,16 @@ public class WaveSpawner : MonoBehaviour
 
         waves = new List<FixedWave>
         {
-            new FixedWave("Wave 1", 5, 150, 10),
-            new FixedWave("Wave 2", 8, 250, 15),
-            new FixedWave("Wave 3 - Tier 2 Starts", 10, 450, 25),
-            new FixedWave("Wave 4", 12, 700, 40),
-            new FixedWave("Wave 5", 15, 1000, 60),
-            new FixedWave("Wave 6 - Tier 3 Starts", 15, 1800, 90),
-            new FixedWave("Wave 7", 15, 2800, 130),
-            new FixedWave("Wave 8", 15, 4200, 180),
-            new FixedWave("Wave 9 - Pre-Endgame", 15, 6500, 250),
-            new FixedWave("Wave 10 - Final Wave", 18, 9500, 350)
+            new FixedWave("Wave 1", 5, 30, 10),
+            new FixedWave("Wave 2", 8, 40, 15),
+            new FixedWave("Wave 3 - Tier 2 Starts", 10, 60, 25),
+            new FixedWave("Wave 4", 12, 80, 30),
+            new FixedWave("Wave 5", 15, 100, 60),
+            new FixedWave("Wave 6 - Tier 3 Starts", 15, 100, 60),
+            new FixedWave("Wave 7", 15, 120, 80),
+            new FixedWave("Wave 8", 15, 140, 100),
+            new FixedWave("Wave 9 - Pre-Endgame", 15, 165, 120),
+            new FixedWave("Wave 10 - Final Wave", 18, 180, 150)
         };
     }
 }

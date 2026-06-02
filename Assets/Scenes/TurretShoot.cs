@@ -72,6 +72,11 @@ public class TurretShoot : MonoBehaviour
             Debug.LogWarning("Bullet has no Rigidbody2D.");
         }
 
+        if (GameSFXManager.Instance != null)
+        {
+            GameSFXManager.Instance.PlayShoot();
+        }
+
         Debug.Log("Tower fired! Damage: " + GetCurrentDamage());
     }
 

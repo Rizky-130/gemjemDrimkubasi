@@ -6,16 +6,19 @@ public class EnemyHealth : MonoBehaviour
     public int maxHP = 3;
     public int currentHP;
 
-    private bool isDead = false;
-    private EnemyHitEffect hitEffect;
-
     [Header("Drop Settings")]
     [Range(0f, 100f)]
     public float dropChance = 100f;
 
+    private bool isDead = false;
+    private EnemyHitEffect hitEffect;
+
     private void Awake()
     {
         hitEffect = GetComponent<EnemyHitEffect>();
+
+        if (hitEffect == null)
+            hitEffect = GetComponentInChildren<EnemyHitEffect>();
     }
 
     private void Start()
@@ -28,7 +31,15 @@ public class EnemyHealth : MonoBehaviour
         if (isDead)
             return;
 
+        if (damage <= 0)
+            return;
+
         currentHP -= damage;
+
+        if (GameSFXManager.Instance != null)
+        {
+            GameSFXManager.Instance.PlayEnemyHit();
+        }
 
         if (hitEffect != null)
         {
@@ -45,6 +56,9 @@ public class EnemyHealth : MonoBehaviour
 
     private void Die()
     {
+        if (isDead)
+            return;
+
         isDead = true;
 
         Debug.Log(gameObject.name + " died.");
@@ -66,7 +80,7 @@ public class EnemyHealth : MonoBehaviour
 
         if (DropManager.Instance == null)
         {
-            Debug.LogError("DropManager.Instance not found in scene!");
+            Debug.LogWarning("DropManager.Instance not found. Enemy cannot drop HM block.");
             return;
         }
 

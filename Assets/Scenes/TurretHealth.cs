@@ -50,6 +50,11 @@ public class TurretHealth : MonoBehaviour
         if (damage <= 0)
             return;
 
+        if (GameSFXManager.Instance != null)
+        {
+            GameSFXManager.Instance.PlayTowerHit();
+        }
+
         if (hitEffect != null)
         {
             hitEffect.PlayHitEffect();
