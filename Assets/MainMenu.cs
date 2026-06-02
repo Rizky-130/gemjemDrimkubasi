@@ -10,9 +10,11 @@ public class MainMenuManager : MonoBehaviour
     {
         Time.timeScale = 1f;
 
-        Debug.Log("Play pressed. Loading cutscene: " + cutsceneSceneName);
+        int nextSceneIndex = SceneManager.GetActiveScene().buildIndex + 1;
 
-        SceneManager.LoadScene(cutsceneSceneName);
+        Debug.Log("Loading scene index: " + nextSceneIndex);
+
+        SceneManager.LoadScene(nextSceneIndex);
     }
 
     public void QuitGame()

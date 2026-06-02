@@ -158,7 +158,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_BackGroundColor: {r: 0.2792809, g: 0.2830189, b: 0.27960807, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -938,8 +938,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9aa759b96e578f4cb65164023410a73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  firstLevelSceneName: TowerDef
-  settingsPanel: {fileID: 0}
+  cutsceneSceneName: Cutscene1
 --- !u!4 &1247864802
 Transform:
   m_ObjectHideFlags: 0
