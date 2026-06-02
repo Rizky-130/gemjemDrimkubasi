@@ -8,18 +8,20 @@ public class EnemyTank : MonoBehaviour
     private TurretHealth turretHealth;
 
     [Header("Tank Movement")]
-    public float moveSpeed = 0.5f;
-    public float stopDistance = 1.0f;
+    public float moveSpeed = 0.8f;
+
+    [Tooltip("Tank should stop farther from tower because it is bigger.")]
+    public float stopDistance = 2.3f;
 
     [Header("Tank Attack")]
-    public int attackDamage = 20;
+    public int attackDamage = 10;
     public float attackCooldown = 2.5f;
 
-    [Header("Tank Scaling")]
-    public float hpMultiplier = 2.5f;
-    public float damageMultiplier = 1.25f;
+    [Header("Wave Stat Multipliers")]
+    public float hpMultiplier = 3f;
+    public float damageMultiplier = 1.4f;
 
-    private float attackTimer;
+    private float attackTimer = 0f;
 
     private void Start()
     {
@@ -28,7 +30,7 @@ public class EnemyTank : MonoBehaviour
 
     private void Update()
     {
-        if (towerTarget == null)
+        if (towerTarget == null || turretHealth == null)
         {
             FindTower();
             return;
@@ -67,7 +69,9 @@ public class EnemyTank : MonoBehaviour
             turretHealth = towerObject.GetComponentInChildren<TurretHealth>();
 
         if (turretHealth == null)
-            Debug.LogError("Tower was found, but it has no TurretHealth script!");
+        {
+            Debug.LogError("Tower found, but TurretHealth is missing!");
+        }
     }
 
     private void MoveTowardTower()
@@ -88,7 +92,7 @@ public class EnemyTank : MonoBehaviour
             if (turretHealth != null)
             {
                 turretHealth.TakeDamage(attackDamage);
-                Debug.Log(gameObject.name + " tank attacked tower for " + attackDamage + " damage!");
+                Debug.Log(gameObject.name + " tank attacked tower for " + attackDamage + " damage.");
             }
 
             attackTimer = attackCooldown;

@@ -1,54 +1,24 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class MainMenu : MonoBehaviour
+public class MainMenuManager : MonoBehaviour
 {
-    [Header("Scene")]
-    public string firstLevelSceneName = "Level1";
-
-    [Header("Panels")]
-    public GameObject settingsPanel;
-
-    private void Start()
-    {
-        Time.timeScale = 1f;
-
-        if (settingsPanel != null)
-        {
-            settingsPanel.SetActive(false);
-        }
-    }
+    [Header("Scene Names")]
+    public string cutsceneSceneName = "Cutscene1";
 
     public void PlayGame()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene(firstLevelSceneName);
-    }
 
-    public void OpenSettings()
-    {
-        if (settingsPanel != null)
-        {
-            settingsPanel.SetActive(true);
-        }
-    }
+        Debug.Log("Play pressed. Loading cutscene: " + cutsceneSceneName);
 
-    public void CloseSettings()
-    {
-        if (settingsPanel != null)
-        {
-            settingsPanel.SetActive(false);
-        }
+        SceneManager.LoadScene(cutsceneSceneName);
     }
 
     public void QuitGame()
     {
         Debug.Log("Quit Game");
 
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#else
         Application.Quit();
-#endif
     }
 }

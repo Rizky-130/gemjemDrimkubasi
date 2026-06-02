@@ -892,18 +892,38 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemies:
-  - enemyPrefab: {fileID: 6382937526954205857, guid: 7f0f84bbbadd92949b14a04c79c4b914, type: 3}
+  - enemyName: Enemy
+    enemyPrefab: {fileID: 6382937526954205857, guid: 7f0f84bbbadd92949b14a04c79c4b914, type: 3}
     unlockWave: 1
     spawnWeight: 1
-  - enemyPrefab: {fileID: 7396431038678375659, guid: 9075e54f50a5e6d4da8dd23b30bb5f36, type: 3}
+    hpMultiplier: 1
+    damageMultiplier: 1
+    attackCooldown: 1.5
+    moveSpeed: 2
+  - enemyName: Enemy
+    enemyPrefab: {fileID: 7396431038678375659, guid: 9075e54f50a5e6d4da8dd23b30bb5f36, type: 3}
     unlockWave: 2
     spawnWeight: 1
-  - enemyPrefab: {fileID: 1632435143453668106, guid: 95d116193272cf846b474af8d429ed2e, type: 3}
+    hpMultiplier: 1
+    damageMultiplier: 1
+    attackCooldown: 1.5
+    moveSpeed: 2
+  - enemyName: Enemy
+    enemyPrefab: {fileID: 1632435143453668106, guid: 95d116193272cf846b474af8d429ed2e, type: 3}
     unlockWave: 4
     spawnWeight: 1
-  - enemyPrefab: {fileID: 6576583587926712038, guid: 2dd4f698a7c233a40aa05acb5971f88f, type: 3}
+    hpMultiplier: 1
+    damageMultiplier: 1
+    attackCooldown: 1.5
+    moveSpeed: 2
+  - enemyName: Enemy
+    enemyPrefab: {fileID: 6576583587926712038, guid: 2dd4f698a7c233a40aa05acb5971f88f, type: 3}
     unlockWave: 4
     spawnWeight: 1
+    hpMultiplier: 1
+    damageMultiplier: 1
+    attackCooldown: 1.5
+    moveSpeed: 2
   waves: []
   currWave: 1
   isSpawningWave: 0
@@ -921,7 +941,6 @@ MonoBehaviour:
   randomSpawnRadius: 1.5
   waveSpawnDuration: 10
   timeBetweenWaves: 3
-  enemiesToSpawn: []
   spawnedEnemies: []
   onAllWavesCleared:
     m_PersistentCalls:
@@ -1769,6 +1788,8 @@ MonoBehaviour:
   maxHP: 100
   currentHP: 0
   hitboxCollider: {fileID: 2038898761}
+  goToMainMenuOnDeath: 1
+  mainMenuSceneName: MainMenu
   objectToDestroy: {fileID: 2038898753}
 --- !u!114 &2038898758
 MonoBehaviour:
@@ -1872,7 +1893,7 @@ CapsuleCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
   m_Offset: {x: -0.1479094, y: -1.2572346}

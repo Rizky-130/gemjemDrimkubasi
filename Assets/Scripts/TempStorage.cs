@@ -12,51 +12,112 @@ public class TempStorage : MonoBehaviour, IDropHandler
 
     private InventoryItem[] storedItems;
 
-    void Awake()
+    private void Awake()
     {
         Instance = this;
         storedItems = new InventoryItem[capacity];
     }
 
-    void Start()
+    private void Start()
     {
         GenerateSlots();
     }
 
-    void GenerateSlots()
+    private void GenerateSlots()
     {
+        if (slotPrefab == null)
+        {
+            Debug.LogError("TempStorage slotPrefab is missing!");
+            return;
+        }
+
+        if (slotContainer == null)
+        {
+            Debug.LogError("TempStorage slotContainer is missing!");
+            return;
+        }
+
         for (int i = 0; i < capacity; i++)
         {
             GameObject slotObj = Instantiate(slotPrefab, slotContainer);
             slotObj.name = $"TempSlot ({i})";
 
             Image slotImage = slotObj.GetComponent<Image>();
-            if (slotImage != null)
-                slotImage.raycastTarget = true;
 
-            // Tambah TempStorageSlot script
-            slotObj.AddComponent<TempStorageSlot>();
+            if (slotImage != null)
+            {
+                slotImage.raycastTarget = true;
+            }
+
+            TempStorageSlot slotScript = slotObj.GetComponent<TempStorageSlot>();
+
+            if (slotScript == null)
+            {
+                slotScript = slotObj.AddComponent<TempStorageSlot>();
+            }
         }
     }
-
 
     public bool HasSpace()
     {
         for (int i = 0; i < capacity; i++)
-            if (storedItems[i] == null) return true;
+        {
+            if (storedItems[i] == null)
+                return true;
+        }
+
         return false;
     }
-    // Ini yang dipanggil saat enemy drop item
 
     public int GetEmptySlotIndex()
     {
         for (int i = 0; i < capacity; i++)
-            if (storedItems[i] == null) return i;
+        {
+            if (storedItems[i] == null)
+                return i;
+        }
+
         return -1;
+    }
+
+    public InventoryItem GetStoredItem(int index)
+    {
+        if (index < 0 || index >= capacity)
+            return null;
+
+        return storedItems[index];
+    }
+
+    public bool SpawnItemToTempStorage(InventoryItem item)
+    {
+        if (item == null)
+            return false;
+
+        if (!HasSpace())
+        {
+            Debug.Log("Temp storage penuh!");
+            return false;
+        }
+
+        if (Inventory.Instance == null)
+        {
+            Debug.LogError("Inventory.Instance not found. Cannot create temp storage item view.");
+            return false;
+        }
+
+        Inventory.Instance.CreateItemViewPublic(item);
+        Inventory.Instance.UpdateItemViewSize(item);
+
+        bool stored = StoreItem(item);
+
+        return stored;
     }
 
     public bool StoreItem(InventoryItem item)
     {
+        if (item == null)
+            return false;
+
         int index = GetEmptySlotIndex();
 
         if (index == -1)
@@ -69,21 +130,37 @@ public class TempStorage : MonoBehaviour, IDropHandler
         item.tempStorageIndex = index;
         item.isInTempStorage = true;
 
-        // Pindahkan view item ke dalam slot
         MoveViewToSlot(item, index);
-        if (UpgradeSystem.Instance != null)
-            UpgradeSystem.Instance.CheckUpgrade();
 
         Debug.Log($"{item.itemName} disimpan di TempStorage slot {index}");
+
+        if (UpgradeSystem.Instance != null)
+        {
+            UpgradeSystem.Instance.CheckUpgrade();
+        }
+
         return true;
     }
 
-    void MoveViewToSlot(InventoryItem item, int index)
+    private void MoveViewToSlot(InventoryItem item, int index)
     {
-        if (item.view == null) return;
+        if (item == null)
+            return;
+
+        if (item.view == null)
+            return;
+
+        if (slotContainer == null)
+            return;
+
+        if (index < 0 || index >= slotContainer.childCount)
+            return;
 
         Transform slot = slotContainer.GetChild(index);
         RectTransform itemRect = item.view.GetComponent<RectTransform>();
+
+        if (itemRect == null)
+            return;
 
         itemRect.SetParent(slot, false);
         itemRect.SetAsLastSibling();
@@ -94,36 +171,54 @@ public class TempStorage : MonoBehaviour, IDropHandler
         itemRect.offsetMax = Vector2.zero;
         itemRect.pivot = new Vector2(0.5f, 0.5f);
 
-        // Daftarkan item ke slot script
         TempStorageSlot slotScript = slot.GetComponent<TempStorageSlot>();
-        if (slotScript != null)
-            slotScript.SetItem(item);
-    }
 
+        if (slotScript != null)
+        {
+            slotScript.SetItem(item);
+        }
+    }
 
     public void RemoveFromStorage(InventoryItem item)
     {
-        if (item.tempStorageIndex < 0) return;
+        if (item == null)
+            return;
+
+        if (item.tempStorageIndex < 0)
+            return;
 
         int index = item.tempStorageIndex;
 
-        // Clear slot script
-        Transform slot = slotContainer.GetChild(index);
-        TempStorageSlot slotScript = slot.GetComponent<TempStorageSlot>();
-        if (slotScript != null)
-            slotScript.ClearItem();
+        if (index >= 0 && index < storedItems.Length)
+        {
+            storedItems[index] = null;
+        }
 
-        storedItems[index] = null;
+        if (slotContainer != null && index >= 0 && index < slotContainer.childCount)
+        {
+            Transform slot = slotContainer.GetChild(index);
+            TempStorageSlot slotScript = slot.GetComponent<TempStorageSlot>();
+
+            if (slotScript != null)
+            {
+                slotScript.ClearItem();
+            }
+        }
+
         item.isInTempStorage = false;
         item.tempStorageIndex = -1;
 
-        if (item.view != null)
+        if (item.view != null && Inventory.Instance != null)
         {
             RectTransform itemRect = item.view.GetComponent<RectTransform>();
-            itemRect.SetParent(Inventory.Instance.itemContainer, false);
-            itemRect.anchorMin = new Vector2(0, 1);
-            itemRect.anchorMax = new Vector2(0, 1);
-            itemRect.pivot = new Vector2(0, 1);
+
+            if (itemRect != null)
+            {
+                itemRect.SetParent(Inventory.Instance.itemContainer, false);
+                itemRect.anchorMin = new Vector2(0, 1);
+                itemRect.anchorMax = new Vector2(0, 1);
+                itemRect.pivot = new Vector2(0, 1);
+            }
         }
     }
 
@@ -132,7 +227,9 @@ public class TempStorage : MonoBehaviour, IDropHandler
         InventoryItemView itemView =
             eventData.pointerDrag?.GetComponent<InventoryItemView>();
 
-        if (itemView == null) return;
+        if (itemView == null)
+            return;
+
         if (!HasSpace())
         {
             Debug.Log("Temp storage penuh!");
@@ -140,32 +237,17 @@ public class TempStorage : MonoBehaviour, IDropHandler
         }
 
         InventoryItem item = itemView.item;
+
+        if (item == null)
+            return;
+
         itemView.isStoredToTemp = true;
 
         bool stored = StoreItem(item);
 
         if (!stored)
-            itemView.isStoredToTemp = false;
-    }
-    // Expose stored item untuk UpgradeSystem
-    public InventoryItem GetStoredItem(int index)
-    {
-        if (index < 0 || index >= capacity) return null;
-        return storedItems[index];
-    }
-
-    // Spawn item langsung ke TempStorage
-    public bool SpawnItemToTempStorage(InventoryItem item)
-    {
-        if (!HasSpace())
         {
-            Debug.Log("Temp storage penuh!");
-            return false;
+            itemView.isStoredToTemp = false;
         }
-
-        Inventory.Instance.CreateItemViewPublic(item);
-        Inventory.Instance.UpdateItemViewSize(item);
-
-        return StoreItem(item);
     }
 }

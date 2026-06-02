@@ -5,80 +5,138 @@ public class UpgradeSystem : MonoBehaviour
 {
     public static UpgradeSystem Instance;
 
-    void Awake()
+    [Header("Upgrade Settings")]
+    public int requiredAmount = 3;
+    public bool allowUpgradeFromTempStorage = true;
+    public bool allowChainUpgrade = true;
+
+    private bool isUpgrading = false;
+
+    private void Awake()
     {
         Instance = this;
     }
 
     public void CheckUpgrade()
     {
-        foreach (ItemShape shapeType in System.Enum.GetValues(typeof(ItemShape)))
+        if (isUpgrading)
+            return;
+
+        if (Inventory.Instance == null)
+        {
+            Debug.LogWarning("UpgradeSystem cannot find Inventory.Instance.");
+            return;
+        }
+
+        isUpgrading = true;
+
+        bool upgradedSomething = false;
+
+        foreach (ItemBlockType blockType in System.Enum.GetValues(typeof(ItemBlockType)))
         {
             foreach (ItemTier tier in System.Enum.GetValues(typeof(ItemTier)))
             {
-                if (tier == ItemTier.Gold) continue;
+                if (tier == ItemTier.Gold)
+                    continue;
 
-                List<InventoryItem> matches = FindMatchingItems(shapeType, tier);
+                List<InventoryItem> matches = FindMatchingItems(blockType, tier);
 
-                if (matches.Count >= 3)
+                if (matches.Count >= requiredAmount)
                 {
-                    DoUpgrade(matches, shapeType, tier);
-                    return;
+                    DoUpgrade(matches, blockType, tier);
+                    upgradedSomething = true;
+                    break;
                 }
             }
+
+            if (upgradedSomething)
+                break;
+        }
+
+        isUpgrading = false;
+
+        if (upgradedSomething && allowChainUpgrade)
+        {
+            CheckUpgrade();
         }
     }
 
-    List<InventoryItem> FindMatchingItems(ItemShape shapeType, ItemTier tier)
+    private List<InventoryItem> FindMatchingItems(ItemBlockType blockType, ItemTier tier)
     {
         List<InventoryItem> result = new List<InventoryItem>();
-        List<InventoryItem> seen   = new List<InventoryItem>();
+        HashSet<InventoryItem> seen = new HashSet<InventoryItem>();
 
-        // Cek grid utama
+        // Check main inventory grid
         for (int y = 0; y < Inventory.Instance.height; y++)
         {
             for (int x = 0; x < Inventory.Instance.width; x++)
             {
                 Slot slot = Inventory.Instance.GetSlot(x, y);
-                if (slot.currentItem == null) continue;
-                if (seen.Contains(slot.currentItem)) continue;
+
+                if (slot == null)
+                    continue;
+
+                if (slot.currentItem == null)
+                    continue;
 
                 InventoryItem item = slot.currentItem;
 
-                if (item.shapeType == shapeType && item.tier == tier)
+                if (seen.Contains(item))
+                    continue;
+
+                seen.Add(item);
+
+                if (item.blockType == blockType && item.tier == tier)
                 {
                     result.Add(item);
-                    seen.Add(item);
                 }
             }
         }
 
-        // Cek TempStorage
-        for (int i = 0; i < TempStorage.Instance.capacity; i++)
+        // Check temp storage
+        if (allowUpgradeFromTempStorage && TempStorage.Instance != null)
         {
-            InventoryItem item = TempStorage.Instance.GetStoredItem(i);
-            if (item == null) continue;
-            if (seen.Contains(item)) continue;
-
-            if (item.shapeType == shapeType && item.tier == tier)
+            for (int i = 0; i < TempStorage.Instance.capacity; i++)
             {
-                result.Add(item);
+                InventoryItem item = TempStorage.Instance.GetStoredItem(i);
+
+                if (item == null)
+                    continue;
+
+                if (seen.Contains(item))
+                    continue;
+
                 seen.Add(item);
+
+                if (item.blockType == blockType && item.tier == tier)
+                {
+                    result.Add(item);
+                }
             }
         }
 
         return result;
     }
 
-    void DoUpgrade(List<InventoryItem> items, ItemShape shapeType, ItemTier tier)
+    private void DoUpgrade(List<InventoryItem> items, ItemBlockType blockType, ItemTier tier)
     {
-        // Simpan posisi spawn dari item pertama yang ada di grid
+        if (items == null || items.Count < requiredAmount)
+            return;
+
+        ItemTier newTier = GetNextTier(tier);
+
         int spawnX = 0;
         int spawnY = 0;
         bool spawnFromGrid = false;
 
-        foreach (InventoryItem item in items)
+        // Try to spawn upgraded item where one old grid item was
+        for (int i = 0; i < items.Count; i++)
         {
+            InventoryItem item = items[i];
+
+            if (item == null)
+                continue;
+
             if (!item.isInTempStorage)
             {
                 spawnX = item.originX;
@@ -88,66 +146,115 @@ public class UpgradeSystem : MonoBehaviour
             }
         }
 
-        // Hapus 3 item lama
-        for (int i = 0; i < 3; i++)
+        // Remove old items
+        for (int i = 0; i < requiredAmount; i++)
         {
             InventoryItem item = items[i];
 
+            if (item == null)
+                continue;
+
             if (item.isInTempStorage)
-                TempStorage.Instance.RemoveFromStorage(item);
+            {
+                if (TempStorage.Instance != null)
+                {
+                    TempStorage.Instance.RemoveFromStorage(item);
+                }
+            }
             else
+            {
                 Inventory.Instance.RemoveItem(item);
+            }
 
             if (item.view != null)
-                Object.Destroy(item.view.gameObject);
+            {
+                Destroy(item.view.gameObject);
+            }
         }
 
-        // Buat item hasil upgrade
-        ItemTier newTier = tier + 1;
-        InventoryItem upgraded = new InventoryItem(
-            $"{newTier} {shapeType}",
-            shapeType,
+        string upgradedName = HMItemDatabase.GetDisplayName(blockType, newTier);
+
+        InventoryItem upgradedItem = new InventoryItem(
+            upgradedName,
+            blockType,
             newTier
         );
 
-        // Coba place di posisi spawn
         bool placed = false;
 
         if (spawnFromGrid)
-            placed = Inventory.Instance.PlaceItem(upgraded, spawnX, spawnY);
+        {
+            placed = Inventory.Instance.PlaceItem(upgradedItem, spawnX, spawnY);
+        }
 
-        // Kalau tidak muat, cari slot kosong lain
         if (!placed)
-            placed = TryPlaceAnywhere(upgraded);
+        {
+            placed = TryPlaceAnywhere(upgradedItem);
+        }
 
         if (placed)
         {
-            Inventory.Instance.CreateItemViewPublic(upgraded);
-            Inventory.Instance.UpdateItemViewSize(upgraded);
-            Inventory.Instance.UpdateItemViewPosition(upgraded);
+            Inventory.Instance.CreateItemViewPublic(upgradedItem);
+            Inventory.Instance.UpdateItemViewSize(upgradedItem);
+            Inventory.Instance.UpdateItemViewPosition(upgradedItem);
         }
         else
         {
-            // Grid penuh, taruh di TempStorage
-            TempStorage.Instance.SpawnItemToTempStorage(upgraded);
+            if (TempStorage.Instance != null)
+            {
+                TempStorage.Instance.SpawnItemToTempStorage(upgradedItem);
+            }
+            else
+            {
+                Debug.LogWarning("Upgrade result could not be placed. TempStorage.Instance missing.");
+            }
         }
 
-        Debug.Log($"Upgrade! {tier} {shapeType} x3 → {newTier} {shapeType}");
+        Debug.Log(
+            "Upgrade! " +
+            requiredAmount + "x " +
+            tier + " " +
+            blockType +
+            " -> " +
+            newTier + " " +
+            blockType
+        );
 
-        // Cek upgrade berantai
-        CheckUpgrade();
+        RecalculateStats();
     }
 
-    bool TryPlaceAnywhere(InventoryItem item)
+    private bool TryPlaceAnywhere(InventoryItem item)
     {
         for (int y = 0; y < Inventory.Instance.height; y++)
         {
             for (int x = 0; x < Inventory.Instance.width; x++)
             {
                 if (Inventory.Instance.PlaceItem(item, x, y))
+                {
                     return true;
+                }
             }
         }
+
         return false;
+    }
+
+    private ItemTier GetNextTier(ItemTier tier)
+    {
+        if (tier == ItemTier.Bronze)
+            return ItemTier.Silver;
+
+        if (tier == ItemTier.Silver)
+            return ItemTier.Gold;
+
+        return ItemTier.Gold;
+    }
+
+    private void RecalculateStats()
+    {
+        if (InventoryStats.Instance != null)
+        {
+            InventoryStats.Instance.Recalculate();
+        }
     }
 }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class TurretHealth : MonoBehaviour
 {
@@ -8,6 +9,10 @@ public class TurretHealth : MonoBehaviour
 
     [Header("Hitbox")]
     public Collider2D hitboxCollider;
+
+    [Header("Death / Game Over")]
+    public bool goToMainMenuOnDeath = true;
+    public string mainMenuSceneName = "MainMenu";
 
     [Header("Destroy Settings")]
     public GameObject objectToDestroy;
@@ -67,7 +72,7 @@ public class TurretHealth : MonoBehaviour
             maxHP = TowerStats.Instance.maxHP;
             currentHP = TowerStats.Instance.currentHP;
 
-            Debug.Log("Tower took damage through TowerStats! HP: " + currentHP + " / " + maxHP);
+            Debug.Log("Tower took damage! HP: " + currentHP + " / " + maxHP);
 
             if (currentHP <= 0)
             {
@@ -122,7 +127,15 @@ public class TurretHealth : MonoBehaviour
 
         isDead = true;
 
-        Debug.Log("Tower destroyed!");
+        Debug.Log("Tower destroyed! Returning to Main Menu.");
+
+        Time.timeScale = 1f;
+
+        if (goToMainMenuOnDeath)
+        {
+            SceneManager.LoadScene(mainMenuSceneName);
+            return;
+        }
 
         if (objectToDestroy != null)
         {

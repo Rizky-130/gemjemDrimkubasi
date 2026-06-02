@@ -25,11 +25,12 @@ public class WaveSpawner : MonoBehaviour
     public float timeBetweenWaves = 3f;
 
     [Header("Runtime Lists")]
-    public List<GameObject> enemiesToSpawn = new List<GameObject>();
     public List<GameObject> spawnedEnemies = new List<GameObject>();
 
     [Header("Events")]
     public UnityEvent onAllWavesCleared;
+
+    private List<EnemySpawnRequest> enemiesToSpawn = new List<EnemySpawnRequest>();
 
     private float spawnInterval;
     private float spawnTimer;
@@ -109,8 +110,8 @@ public class WaveSpawner : MonoBehaviour
         Debug.Log(
             currentWaveData.waveName +
             " started | Quantity: " + currentWaveData.enemyQuantity +
-            " | HP: " + currentWaveData.enemyHP +
-            " | Damage: " + currentWaveData.enemyDamage
+            " | Base HP: " + currentWaveData.enemyHP +
+            " | Base Damage: " + currentWaveData.enemyDamage
         );
 
         if (GameSFXManager.Instance != null)
@@ -139,7 +140,7 @@ public class WaveSpawner : MonoBehaviour
             if (selectedEnemy.enemyPrefab == null)
                 continue;
 
-            enemiesToSpawn.Add(selectedEnemy.enemyPrefab);
+            enemiesToSpawn.Add(new EnemySpawnRequest(selectedEnemy));
         }
     }
 
@@ -220,10 +221,10 @@ public class WaveSpawner : MonoBehaviour
         if (enemiesToSpawn.Count <= 0)
             return;
 
-        GameObject enemyPrefab = enemiesToSpawn[0];
+        EnemySpawnRequest request = enemiesToSpawn[0];
         enemiesToSpawn.RemoveAt(0);
 
-        if (enemyPrefab == null)
+        if (request == null || request.option == null || request.option.enemyPrefab == null)
             return;
 
         Transform selectedSpawn = GetRandomSpawnPoint();
@@ -243,12 +244,12 @@ public class WaveSpawner : MonoBehaviour
         );
 
         GameObject enemy = Instantiate(
-            enemyPrefab,
+            request.option.enemyPrefab,
             spawnPosition,
             Quaternion.identity
         );
 
-        ApplyWaveStatsToEnemy(enemy, currentWaveData);
+        ApplyWaveStatsToEnemy(enemy, currentWaveData, request.option);
 
         spawnedEnemies.Add(enemy);
 
@@ -262,7 +263,8 @@ public class WaveSpawner : MonoBehaviour
         tracker.Setup(this);
 
         Debug.Log(
-            "Spawned enemy for Wave " + currWave +
+            "Spawned " + request.option.enemyName +
+            " | Wave " + currWave +
             " | Remaining to spawn: " + enemiesToSpawn.Count
         );
     }
@@ -285,24 +287,16 @@ public class WaveSpawner : MonoBehaviour
         return null;
     }
 
-    private void ApplyWaveStatsToEnemy(GameObject enemy, FixedWave waveData)
+    private void ApplyWaveStatsToEnemy(GameObject enemy, FixedWave waveData, EnemySpawnOption option)
     {
-        if (enemy == null || waveData == null)
+        if (enemy == null || waveData == null || option == null)
             return;
 
-        int finalHP = waveData.enemyHP;
-        int finalDamage = waveData.enemyDamage;
+        int finalHP = Mathf.RoundToInt(waveData.enemyHP * option.hpMultiplier);
+        int finalDamage = Mathf.RoundToInt(waveData.enemyDamage * option.damageMultiplier);
 
-        EnemyTank tank = enemy.GetComponent<EnemyTank>();
-
-        if (tank == null)
-            tank = enemy.GetComponentInChildren<EnemyTank>();
-
-        if (tank != null)
-        {
-            finalHP = Mathf.RoundToInt(waveData.enemyHP * tank.hpMultiplier);
-            finalDamage = Mathf.RoundToInt(waveData.enemyDamage * tank.damageMultiplier);
-        }
+        finalHP = Mathf.Max(1, finalHP);
+        finalDamage = Mathf.Max(1, finalDamage);
 
         EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
 
@@ -323,6 +317,12 @@ public class WaveSpawner : MonoBehaviour
         if (melee != null)
         {
             melee.attackDamage = finalDamage;
+
+            if (option.attackCooldown > 0f)
+                melee.attackCooldown = option.attackCooldown;
+
+            if (option.moveSpeed > 0f)
+                melee.moveSpeed = option.moveSpeed;
         }
 
         EnemyRanged ranged = enemy.GetComponent<EnemyRanged>();
@@ -333,25 +333,32 @@ public class WaveSpawner : MonoBehaviour
         if (ranged != null)
         {
             ranged.attackDamage = finalDamage;
+
+            if (option.attackCooldown > 0f)
+                ranged.attackCooldown = option.attackCooldown;
+
+            if (option.moveSpeed > 0f)
+                ranged.moveSpeed = option.moveSpeed;
         }
 
-        EnemyBomber bomber = enemy.GetComponent<EnemyBomber>();
+        EnemyTank tank = enemy.GetComponent<EnemyTank>();
 
-        if (bomber == null)
-            bomber = enemy.GetComponentInChildren<EnemyBomber>();
-
-        if (bomber != null)
-        {
-            bomber.explosionDamage = finalDamage;
-        }
+        if (tank == null)
+            tank = enemy.GetComponentInChildren<EnemyTank>();
 
         if (tank != null)
         {
             tank.attackDamage = finalDamage;
+
+            if (option.attackCooldown > 0f)
+                tank.attackCooldown = option.attackCooldown;
+
+            if (option.moveSpeed > 0f)
+                tank.moveSpeed = option.moveSpeed;
         }
 
         Debug.Log(
-            enemy.name +
+            option.enemyName +
             " stats applied | HP: " +
             finalHP +
             " | Damage: " +
@@ -434,16 +441,16 @@ public class WaveSpawner : MonoBehaviour
 
         waves = new List<FixedWave>
         {
-            new FixedWave("Wave 1", 5, 30, 10),
-            new FixedWave("Wave 2", 8, 40, 15),
-            new FixedWave("Wave 3 - Tier 2 Starts", 10, 60, 25),
-            new FixedWave("Wave 4", 12, 80, 30),
-            new FixedWave("Wave 5", 15, 100, 60),
-            new FixedWave("Wave 6 - Tier 3 Starts", 15, 100, 60),
-            new FixedWave("Wave 7", 15, 120, 80),
-            new FixedWave("Wave 8", 15, 140, 100),
-            new FixedWave("Wave 9 - Pre-Endgame", 15, 165, 120),
-            new FixedWave("Wave 10 - Final Wave", 18, 180, 150)
+            new FixedWave("Wave 1", 5, 20, 5),
+            new FixedWave("Wave 2", 8, 35, 8),
+            new FixedWave("Wave 3 - Tier 2 Starts", 10, 60, 12),
+            new FixedWave("Wave 4", 12, 95, 18),
+            new FixedWave("Wave 5", 15, 150, 26),
+            new FixedWave("Wave 6 - Tier 3 Starts", 15, 230, 38),
+            new FixedWave("Wave 7", 15, 350, 55),
+            new FixedWave("Wave 8", 15, 520, 75),
+            new FixedWave("Wave 9 - Pre-Endgame", 15, 750, 100),
+            new FixedWave("Wave 10 - Final Wave", 18, 1100, 140)
         };
     }
 }
@@ -468,6 +475,7 @@ public class FixedWave
 [System.Serializable]
 public class EnemySpawnOption
 {
+    public string enemyName = "Enemy";
     public GameObject enemyPrefab;
 
     [Header("Wave Availability")]
@@ -475,4 +483,22 @@ public class EnemySpawnOption
 
     [Header("Spawn Chance Weight")]
     public int spawnWeight = 1;
+
+    [Header("Stat Multipliers")]
+    public float hpMultiplier = 1f;
+    public float damageMultiplier = 1f;
+
+    [Header("Attack / Movement Override")]
+    public float attackCooldown = 1.5f;
+    public float moveSpeed = 2f;
+}
+
+public class EnemySpawnRequest
+{
+    public EnemySpawnOption option;
+
+    public EnemySpawnRequest(EnemySpawnOption option)
+    {
+        this.option = option;
+    }
 }

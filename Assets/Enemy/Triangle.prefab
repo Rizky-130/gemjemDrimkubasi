@@ -105,7 +105,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHP: 2
   currentHP: 0
-  dropChance: 100
+  dropChance: 30
 --- !u!114 &8783496523444917093
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -9,13 +9,15 @@ public class EnemyMelle : MonoBehaviour
 
     [Header("Movement")]
     public float moveSpeed = 2f;
-    public float stopDistance = 0.8f;
+
+    [Tooltip("This is distance from enemy to tower center. Use 2 or bigger.")]
+    public float stopDistance = 2f;
 
     [Header("Attack")]
-    public int attackDamage = 1;
+    public int attackDamage = 5;
     public float attackCooldown = 1.5f;
 
-    private float attackTimer;
+    private float attackTimer = 0f;
 
     private void Start()
     {
@@ -24,7 +26,7 @@ public class EnemyMelle : MonoBehaviour
 
     private void Update()
     {
-        if (towerTarget == null)
+        if (towerTarget == null || turretHealth == null)
         {
             FindTower();
             return;
@@ -48,7 +50,7 @@ public class EnemyMelle : MonoBehaviour
 
         if (towerObject == null)
         {
-            Debug.LogWarning("Enemy cannot find object with tag: " + towerTag);
+            Debug.LogWarning(gameObject.name + " cannot find object with tag: " + towerTag);
             return;
         }
 
@@ -63,7 +65,13 @@ public class EnemyMelle : MonoBehaviour
             turretHealth = towerObject.GetComponentInChildren<TurretHealth>();
 
         if (turretHealth == null)
-            Debug.LogError("Tower was found, but it has no TurretHealth script!");
+        {
+            Debug.LogError("Tower found, but TurretHealth is missing!");
+        }
+        else
+        {
+            Debug.Log(gameObject.name + " found tower.");
+        }
     }
 
     private void MoveTowardTower()
@@ -84,7 +92,7 @@ public class EnemyMelle : MonoBehaviour
             if (turretHealth != null)
             {
                 turretHealth.TakeDamage(attackDamage);
-                Debug.Log(gameObject.name + " attacked the turret!");
+                Debug.Log(gameObject.name + " attacked tower for " + attackDamage + " damage.");
             }
 
             attackTimer = attackCooldown;

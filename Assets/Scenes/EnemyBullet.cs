@@ -9,7 +9,13 @@ public class EnemyBullet : MonoBehaviour
 
     private Transform target;
     private Vector2 moveDirection;
+    private Rigidbody2D rb;
     private bool hasHit = false;
+
+    private void Awake()
+    {
+        rb = GetComponent<Rigidbody2D>();
+    }
 
     private void Start()
     {
@@ -30,11 +36,19 @@ public class EnemyBullet : MonoBehaviour
 
         float angle = Mathf.Atan2(moveDirection.y, moveDirection.x) * Mathf.Rad2Deg;
         transform.rotation = Quaternion.Euler(0f, 0f, angle);
+
+        if (rb != null)
+        {
+            rb.velocity = moveDirection * speed;
+        }
     }
 
     private void Update()
     {
-        transform.position += (Vector3)moveDirection * speed * Time.deltaTime;
+        if (rb == null)
+        {
+            transform.position += (Vector3)moveDirection * speed * Time.deltaTime;
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -56,7 +70,7 @@ public class EnemyBullet : MonoBehaviour
 
             turretHealth.TakeDamage(damage);
 
-            Debug.Log("Enemy bullet hit tower for " + damage + " damage!");
+            Debug.Log("Enemy bullet hit tower for " + damage + " damage.");
 
             Destroy(gameObject);
         }
