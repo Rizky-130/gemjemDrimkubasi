@@ -12,6 +12,13 @@ public class DropManager : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogWarning("Duplicate DropManager found. Destroying duplicate.");
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
     }
 

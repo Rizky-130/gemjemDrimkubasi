@@ -4,54 +4,63 @@ public static class HMBlockDropTable
 {
     public static ItemTier GetRandomTierByWave(int wave)
     {
-        float bronzeChance;
-        float silverChance;
-        float goldChance;
-
+        // Wave 1-2: only Tier 1 / Bronze
         if (wave <= 2)
-        {
-            bronzeChance = 90f;
-            silverChance = 10f;
-            goldChance = 0f;
-        }
-        else if (wave <= 5)
-        {
-            bronzeChance = 70f;
-            silverChance = 25f;
-            goldChance = 5f;
-        }
-        else if (wave <= 9)
-        {
-            bronzeChance = 50f;
-            silverChance = 40f;
-            goldChance = 10f;
-        }
-        else if (wave <= 14)
-        {
-            bronzeChance = 35f;
-            silverChance = 45f;
-            goldChance = 20f;
-        }
-        else
-        {
-            bronzeChance = 25f;
-            silverChance = 45f;
-            goldChance = 30f;
-        }
-
-        float roll = Random.Range(0f, 100f);
-
-        if (roll < bronzeChance)
         {
             return ItemTier.Bronze;
         }
 
-        if (roll < bronzeChance + silverChance)
+        // Wave 3-5: Tier 2 starts appearing
+        if (wave <= 5)
         {
+            float roll = Random.Range(0f, 100f);
+
+            if (roll < 65f)
+                return ItemTier.Bronze;
+
             return ItemTier.Silver;
         }
 
-        return ItemTier.Gold;
+        // Wave 6-8: Tier 3 starts appearing
+        if (wave <= 8)
+        {
+            float roll = Random.Range(0f, 100f);
+
+            if (roll < 35f)
+                return ItemTier.Bronze;
+
+            if (roll < 80f)
+                return ItemTier.Silver;
+
+            return ItemTier.Gold;
+        }
+
+        // Wave 9: pre-endgame, more Gold
+        if (wave == 9)
+        {
+            float roll = Random.Range(0f, 100f);
+
+            if (roll < 20f)
+                return ItemTier.Bronze;
+
+            if (roll < 65f)
+                return ItemTier.Silver;
+
+            return ItemTier.Gold;
+        }
+
+        // Wave 10: final wave, highest Gold chance
+        {
+            float roll = Random.Range(0f, 100f);
+
+            if (roll < 10f)
+                return ItemTier.Bronze;
+
+            if (roll < 50f)
+                return ItemTier.Silver;
+
+            return ItemTier.Gold;
+        }
     }
 
     public static ItemBlockType GetRandomBlockType()

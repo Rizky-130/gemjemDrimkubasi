@@ -1,59 +1,67 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class WaveSpawner : MonoBehaviour
 {
     [Header("Enemy Pool")]
-    public List<Enemy> enemies = new List<Enemy>();
+    public List<EnemySpawnOption> enemies = new List<EnemySpawnOption>();
 
-    [Header("Wave Settings")]
+    [Header("Fixed 10 Waves")]
+    public List<FixedWave> waves = new List<FixedWave>();
+
+    [Header("Runtime Wave Info")]
     public int currWave = 1;
-    public int baseWaveValue = 10;
-    public int waveValueIncrease = 5;
-    public int maxEnemiesPerWave = 50;
-
-    private int waveValue;
+    public bool isSpawningWave = false;
+    public bool waitingForNextWave = false;
+    public bool allWavesCleared = false;
 
     [Header("Spawn Settings")]
-    public List<GameObject> enemiesToSpawn = new List<GameObject>();
-    public Transform[] spawnLocation;
-
-    [Tooltip("Random area around each spawn point.")]
+    public Transform[] spawnLocations;
     public float randomSpawnRadius = 1.5f;
+    public float waveSpawnDuration = 10f;
 
-    [Header("Timing")]
-    public float waveDuration = 20f;
+    [Header("Delay Between Waves")]
     public float timeBetweenWaves = 3f;
 
-    private float waveTimer;
+    [Header("Runtime Lists")]
+    public List<GameObject> enemiesToSpawn = new List<GameObject>();
+    public List<GameObject> spawnedEnemies = new List<GameObject>();
+
+    [Header("Events")]
+    public UnityEvent onAllWavesCleared;
+
     private float spawnInterval;
     private float spawnTimer;
     private float nextWaveTimer;
 
-    [Header("Runtime Info")]
-    public List<GameObject> spawnedEnemies = new List<GameObject>();
-    public bool isSpawningWave = false;
-    public bool waitingForNextWave = false;
+    private FixedWave currentWaveData;
+
+    private void Awake()
+    {
+        CreateDefaultWavesIfEmpty();
+    }
 
     private void Start()
     {
-        GenerateWave();
+        currWave = 1;
+        isSpawningWave = false;
+        waitingForNextWave = false;
+        allWavesCleared = false;
+
+        StartWave(currWave);
     }
 
     private void Update()
     {
         CleanEnemyList();
 
+        if (allWavesCleared)
+            return;
+
         if (waitingForNextWave)
         {
-            nextWaveTimer -= Time.deltaTime;
-
-            if (nextWaveTimer <= 0f)
-            {
-                currWave++;
-                GenerateWave();
-            }
-
+            HandleNextWaveDelay();
             return;
         }
 
@@ -64,13 +72,123 @@ public class WaveSpawner : MonoBehaviour
 
         if (!isSpawningWave && enemiesToSpawn.Count <= 0 && spawnedEnemies.Count <= 0)
         {
-            StartNextWaveTimer();
+            FinishCurrentWave();
         }
+    }
+
+    private void StartWave(int waveNumber)
+    {
+        if (waveNumber > waves.Count)
+        {
+            FinishAllWaves();
+            return;
+        }
+
+        currentWaveData = waves[waveNumber - 1];
+
+        currWave = waveNumber;
+        isSpawningWave = true;
+        waitingForNextWave = false;
+
+        enemiesToSpawn.Clear();
+        spawnedEnemies.Clear();
+
+        GenerateEnemiesForWave(currentWaveData.enemyQuantity);
+
+        if (enemiesToSpawn.Count <= 0)
+        {
+            Debug.LogWarning("Wave " + currWave + " has no enemies to spawn.");
+            isSpawningWave = false;
+            FinishCurrentWave();
+            return;
+        }
+
+        spawnInterval = waveSpawnDuration / enemiesToSpawn.Count;
+        spawnTimer = 0f;
+
+        Debug.Log(
+            currentWaveData.waveName +
+            " started | Quantity: " + currentWaveData.enemyQuantity +
+            " | HP: " + currentWaveData.enemyHP +
+            " | Damage: " + currentWaveData.enemyDamage
+        );
+    }
+
+    private void GenerateEnemiesForWave(int quantity)
+    {
+        enemiesToSpawn.Clear();
+
+        if (enemies == null || enemies.Count <= 0)
+        {
+            Debug.LogError("WaveSpawner has no enemy prefabs assigned!");
+            return;
+        }
+
+        for (int i = 0; i < quantity; i++)
+        {
+            EnemySpawnOption selectedEnemy = GetRandomAvailableEnemy();
+
+            if (selectedEnemy == null)
+                continue;
+
+            if (selectedEnemy.enemyPrefab == null)
+                continue;
+
+            enemiesToSpawn.Add(selectedEnemy.enemyPrefab);
+        }
+    }
+
+    private EnemySpawnOption GetRandomAvailableEnemy()
+    {
+        List<EnemySpawnOption> availableEnemies = new List<EnemySpawnOption>();
+
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            EnemySpawnOption enemy = enemies[i];
+
+            if (enemy == null)
+                continue;
+
+            if (enemy.enemyPrefab == null)
+                continue;
+
+            if (currWave < enemy.unlockWave)
+                continue;
+
+            availableEnemies.Add(enemy);
+        }
+
+        if (availableEnemies.Count <= 0)
+        {
+            Debug.LogWarning("No available enemy type for Wave " + currWave);
+            return null;
+        }
+
+        int totalWeight = 0;
+
+        for (int i = 0; i < availableEnemies.Count; i++)
+        {
+            totalWeight += Mathf.Max(1, availableEnemies[i].spawnWeight);
+        }
+
+        int randomValue = Random.Range(0, totalWeight);
+        int currentWeight = 0;
+
+        for (int i = 0; i < availableEnemies.Count; i++)
+        {
+            currentWeight += Mathf.Max(1, availableEnemies[i].spawnWeight);
+
+            if (randomValue < currentWeight)
+            {
+                return availableEnemies[i];
+            }
+        }
+
+        return availableEnemies[0];
     }
 
     private void HandleSpawning()
     {
-        waveTimer -= Time.deltaTime;
         spawnTimer -= Time.deltaTime;
 
         if (spawnTimer <= 0f && enemiesToSpawn.Count > 0)
@@ -84,20 +202,13 @@ public class WaveSpawner : MonoBehaviour
             isSpawningWave = false;
             Debug.Log("Wave " + currWave + " finished spawning. Kill remaining enemies.");
         }
-
-        if (waveTimer <= 0f)
-        {
-            isSpawningWave = false;
-            enemiesToSpawn.Clear();
-            Debug.Log("Wave timer ended. No more enemies will spawn this wave.");
-        }
     }
 
     private void SpawnEnemy()
     {
-        if (spawnLocation == null || spawnLocation.Length <= 0)
+        if (spawnLocations == null || spawnLocations.Length <= 0)
         {
-            Debug.LogError("No spawn locations assigned!");
+            Debug.LogError("No spawn locations assigned in WaveSpawner!");
             return;
         }
 
@@ -108,10 +219,7 @@ public class WaveSpawner : MonoBehaviour
         enemiesToSpawn.RemoveAt(0);
 
         if (enemyPrefab == null)
-        {
-            Debug.LogWarning("Enemy prefab is missing. Skipping spawn.");
             return;
-        }
 
         Transform selectedSpawn = GetRandomSpawnPoint();
 
@@ -135,6 +243,8 @@ public class WaveSpawner : MonoBehaviour
             Quaternion.identity
         );
 
+        ApplyWaveStatsToEnemy(enemy, currentWaveData);
+
         spawnedEnemies.Add(enemy);
 
         EnemyWaveTracker tracker = enemy.GetComponent<EnemyWaveTracker>();
@@ -146,105 +256,143 @@ public class WaveSpawner : MonoBehaviour
 
         tracker.Setup(this);
 
-        Debug.Log("Enemy spawned randomly. Remaining to spawn: " + enemiesToSpawn.Count);
+        Debug.Log(
+            "Spawned enemy for Wave " + currWave +
+            " | Remaining to spawn: " + enemiesToSpawn.Count
+        );
     }
 
     private Transform GetRandomSpawnPoint()
     {
+        if (spawnLocations == null || spawnLocations.Length <= 0)
+            return null;
+
         for (int i = 0; i < 20; i++)
         {
-            int randomIndex = Random.Range(0, spawnLocation.Length);
+            int randomIndex = Random.Range(0, spawnLocations.Length);
 
-            if (spawnLocation[randomIndex] != null)
+            if (spawnLocations[randomIndex] != null)
             {
-                return spawnLocation[randomIndex];
+                return spawnLocations[randomIndex];
             }
         }
 
         return null;
     }
 
-    public void GenerateWave()
+    private void ApplyWaveStatsToEnemy(GameObject enemy, FixedWave waveData)
     {
-        waitingForNextWave = false;
-        isSpawningWave = true;
+        if (enemy == null || waveData == null)
+            return;
 
-        enemiesToSpawn.Clear();
-        spawnedEnemies.Clear();
+        int finalHP = waveData.enemyHP;
+        int finalDamage = waveData.enemyDamage;
 
-        waveValue = baseWaveValue + (currWave - 1) * waveValueIncrease;
+        EnemyTank tank = enemy.GetComponent<EnemyTank>();
 
-        GenerateEnemies();
+        if (tank == null)
+            tank = enemy.GetComponentInChildren<EnemyTank>();
 
-        if (enemiesToSpawn.Count <= 0)
+        if (tank != null)
         {
-            Debug.LogWarning("No enemies generated. Check enemy prefabs and enemy costs.");
-            isSpawningWave = false;
-            StartNextWaveTimer();
+            finalHP = Mathf.RoundToInt(waveData.enemyHP * tank.hpMultiplier);
+            finalDamage = Mathf.RoundToInt(waveData.enemyDamage * tank.damageMultiplier);
+        }
+
+        EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
+
+        if (enemyHealth == null)
+            enemyHealth = enemy.GetComponentInChildren<EnemyHealth>();
+
+        if (enemyHealth != null)
+        {
+            enemyHealth.maxHP = finalHP;
+            enemyHealth.currentHP = finalHP;
+        }
+
+        EnemyMelle melee = enemy.GetComponent<EnemyMelle>();
+
+        if (melee == null)
+            melee = enemy.GetComponentInChildren<EnemyMelle>();
+
+        if (melee != null)
+        {
+            melee.attackDamage = finalDamage;
+        }
+
+        EnemyRanged ranged = enemy.GetComponent<EnemyRanged>();
+
+        if (ranged == null)
+            ranged = enemy.GetComponentInChildren<EnemyRanged>();
+
+        if (ranged != null)
+        {
+            ranged.attackDamage = finalDamage;
+        }
+
+        EnemyBomber bomber = enemy.GetComponent<EnemyBomber>();
+
+        if (bomber == null)
+            bomber = enemy.GetComponentInChildren<EnemyBomber>();
+
+        if (bomber != null)
+        {
+            bomber.explosionDamage = finalDamage;
+        }
+
+        if (tank != null)
+        {
+            tank.attackDamage = finalDamage;
+        }
+
+        Debug.Log(
+            enemy.name +
+            " stats applied | HP: " +
+            finalHP +
+            " | Damage: " +
+            finalDamage
+        );
+    }
+
+    private void FinishCurrentWave()
+    {
+        Debug.Log("Wave " + currWave + " cleared!");
+
+        if (currWave >= waves.Count)
+        {
+            FinishAllWaves();
             return;
         }
 
-        spawnInterval = waveDuration / enemiesToSpawn.Count;
-        spawnTimer = 0f;
-        waveTimer = waveDuration;
-
-        Debug.Log("Wave " + currWave + " started. Enemies: " + enemiesToSpawn.Count);
-    }
-
-    public void GenerateEnemies()
-    {
-        List<GameObject> generatedEnemies = new List<GameObject>();
-
-        if (enemies == null || enemies.Count <= 0)
-        {
-            Debug.LogError("No enemy types assigned in WaveSpawner!");
-            enemiesToSpawn = generatedEnemies;
-            return;
-        }
-
-        int safetyLoop = 0;
-
-        while (waveValue > 0 && generatedEnemies.Count < maxEnemiesPerWave)
-        {
-            safetyLoop++;
-
-            if (safetyLoop > 500)
-            {
-                Debug.LogWarning("Enemy generation stopped by safety loop.");
-                break;
-            }
-
-            List<Enemy> affordableEnemies = new List<Enemy>();
-
-            for (int i = 0; i < enemies.Count; i++)
-            {
-                if (enemies[i].enemyPrefab != null && enemies[i].cost > 0 && enemies[i].cost <= waveValue)
-                {
-                    affordableEnemies.Add(enemies[i]);
-                }
-            }
-
-            if (affordableEnemies.Count <= 0)
-            {
-                break;
-            }
-
-            int randEnemyId = Random.Range(0, affordableEnemies.Count);
-            Enemy selectedEnemy = affordableEnemies[randEnemyId];
-
-            generatedEnemies.Add(selectedEnemy.enemyPrefab);
-            waveValue -= selectedEnemy.cost;
-        }
-
-        enemiesToSpawn = generatedEnemies;
-    }
-
-    private void StartNextWaveTimer()
-    {
         waitingForNextWave = true;
         nextWaveTimer = timeBetweenWaves;
 
-        Debug.Log("Wave " + currWave + " cleared! Next wave soon.");
+        Debug.Log("Next wave starts in " + timeBetweenWaves + " seconds.");
+    }
+
+    private void HandleNextWaveDelay()
+    {
+        nextWaveTimer -= Time.deltaTime;
+
+        if (nextWaveTimer <= 0f)
+        {
+            waitingForNextWave = false;
+            StartWave(currWave + 1);
+        }
+    }
+
+    private void FinishAllWaves()
+    {
+        allWavesCleared = true;
+        isSpawningWave = false;
+        waitingForNextWave = false;
+
+        Debug.Log("All 10 waves cleared!");
+
+        if (onAllWavesCleared != null)
+        {
+            onAllWavesCleared.Invoke();
+        }
     }
 
     private void CleanEnemyList()
@@ -260,16 +408,61 @@ public class WaveSpawner : MonoBehaviour
 
     public void RemoveEnemy(GameObject enemy)
     {
+        if (enemy == null)
+            return;
+
         if (spawnedEnemies.Contains(enemy))
         {
             spawnedEnemies.Remove(enemy);
         }
     }
+
+    private void CreateDefaultWavesIfEmpty()
+    {
+        if (waves != null && waves.Count > 0)
+            return;
+
+        waves = new List<FixedWave>
+        {
+            new FixedWave("Wave 1", 5, 150, 10),
+            new FixedWave("Wave 2", 8, 250, 15),
+            new FixedWave("Wave 3 - Tier 2 Starts", 10, 450, 25),
+            new FixedWave("Wave 4", 12, 700, 40),
+            new FixedWave("Wave 5", 15, 1000, 60),
+            new FixedWave("Wave 6 - Tier 3 Starts", 15, 1800, 90),
+            new FixedWave("Wave 7", 15, 2800, 130),
+            new FixedWave("Wave 8", 15, 4200, 180),
+            new FixedWave("Wave 9 - Pre-Endgame", 15, 6500, 250),
+            new FixedWave("Wave 10 - Final Wave", 18, 9500, 350)
+        };
+    }
 }
 
 [System.Serializable]
-public class Enemy
+public class FixedWave
+{
+    public string waveName;
+    public int enemyQuantity;
+    public int enemyHP;
+    public int enemyDamage;
+
+    public FixedWave(string waveName, int enemyQuantity, int enemyHP, int enemyDamage)
+    {
+        this.waveName = waveName;
+        this.enemyQuantity = enemyQuantity;
+        this.enemyHP = enemyHP;
+        this.enemyDamage = enemyDamage;
+    }
+}
+
+[System.Serializable]
+public class EnemySpawnOption
 {
     public GameObject enemyPrefab;
-    public int cost = 1;
+
+    [Header("Wave Availability")]
+    public int unlockWave = 1;
+
+    [Header("Spawn Chance Weight")]
+    public int spawnWeight = 1;
 }

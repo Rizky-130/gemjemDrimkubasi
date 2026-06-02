@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 public class TowerStats : MonoBehaviour
@@ -7,11 +6,11 @@ public class TowerStats : MonoBehaviour
 
     [Header("Base Tower Stats")]
     public int baseDamage = 10;
-    public float baseFireRate = 1.0f; // Shots per second
+    public float baseFireRate = 1.0f;
     public int baseMaxHP = 100;
     public int baseHM = 0;
 
-    [Header("Current Tower Stats")]
+    [Header("Current Final Stats")]
     public int damage;
     public float fireRate;
     public int maxHP;
@@ -29,49 +28,52 @@ public class TowerStats : MonoBehaviour
 
     private void Start()
     {
-        ResetStats();
+        ResetToBaseStats();
+        RefreshStatsFromInventory();
     }
 
-    public void ResetStats()
+    public void ResetToBaseStats()
     {
         damage = baseDamage;
         fireRate = baseFireRate;
         maxHP = baseMaxHP;
         currentHP = maxHP;
         dreamHormone = baseHM;
-
-        DebugStats();
     }
 
-    public void RecalculateStats(List<InventoryItem> activeItems)
+    public void RefreshStatsFromInventory()
     {
         int oldMaxHP = maxHP;
 
-        damage = baseDamage;
-        fireRate = baseFireRate;
-        maxHP = baseMaxHP;
-        dreamHormone = baseHM;
+        int bonusDamage = 0;
+        float bonusFireRate = 0f;
+        int bonusHP = 0;
+        int bonusHM = 0;
 
-        if (activeItems != null)
+        if (InventoryStats.Instance != null)
         {
-            foreach (InventoryItem item in activeItems)
-            {
-                if (item == null)
-                    continue;
-
-                damage += item.stats.damageBonus;
-                fireRate += item.stats.fireRateBonus;
-                maxHP += item.stats.hpBonus;
-                dreamHormone += item.stats.hmBonus;
-            }
+            bonusDamage = InventoryStats.Instance.totalDamage;
+            bonusFireRate = InventoryStats.Instance.totalFireRate;
+            bonusHP = InventoryStats.Instance.totalHP;
+            bonusHM = InventoryStats.Instance.totalHM;
         }
 
-        // If max HP increases, current HP increases by the difference.
-        int hpDifference = maxHP - oldMaxHP;
-        currentHP += hpDifference;
+        damage = baseDamage + bonusDamage;
+        fireRate = baseFireRate + bonusFireRate;
+        maxHP = baseMaxHP + bonusHP;
+        dreamHormone = baseHM + bonusHM;
+
+        if (maxHP != oldMaxHP)
+        {
+            int hpDifference = maxHP - oldMaxHP;
+            currentHP += hpDifference;
+        }
+
         currentHP = Mathf.Clamp(currentHP, 0, maxHP);
 
-        DebugStats();
+        Debug.Log(
+            $"Tower Final Stats | DMG:{damage} | HP:{currentHP}/{maxHP} | FR:{fireRate} | HM:{dreamHormone}"
+        );
     }
 
     public void TakeDamage(int damageAmount)
@@ -96,15 +98,5 @@ public class TowerStats : MonoBehaviour
     public bool IsGoodEnding()
     {
         return dreamHormone > goodEndingMinHM && dreamHormone < goodEndingMaxHM;
-    }
-
-    public void DebugStats()
-    {
-        Debug.Log(
-            "Tower Stats | Damage: " + damage +
-            " | Fire Rate: " + fireRate +
-            " | HP: " + currentHP + "/" + maxHP +
-            " | HM: " + dreamHormone
-        );
     }
 }
