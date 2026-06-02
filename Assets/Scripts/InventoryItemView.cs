@@ -60,13 +60,15 @@ public class InventoryItemView : MonoBehaviour,
         // Item ikut cursor
         rectTransform.anchoredPosition +=
             eventData.delta / canvas.scaleFactor;
+        ItemInfoUI.Instance.Show(item);
+
 
         // Cek input rotasi
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            item.Rotate();
-            inventory.UpdateItemViewSize(item); // update ukuran visual
-        }
+        // if (Input.GetKeyDown(KeyCode.R))
+        // {
+        //     item.Rotate();
+        //     inventory.UpdateItemViewSize(item); // update ukuran visual
+        // }
 
         // Highlight slot yang valid
         Vector2Int? gridPos = inventory.GetGridPositionFromPointer(eventData);
@@ -126,5 +128,12 @@ public class InventoryItemView : MonoBehaviour,
             }
         }
     }
+    // public void OnPointerClick(PointerEventData eventData)
+    // {
+    //     if (eventData.button != PointerEventData.InputButton.Left)
+    //         return;
+
+    //     ItemInfoUI.Instance.Show(item);
+    // }
 
 }

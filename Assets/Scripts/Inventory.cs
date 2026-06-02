@@ -24,6 +24,10 @@ public class Inventory : MonoBehaviour
     {
         GenerateGrid();
     }
+    public Slot GetSlot(int x, int y)
+    {
+        return slots[x, y];
+    }
 
     void GenerateGrid()
     {
@@ -108,6 +112,11 @@ public class Inventory : MonoBehaviour
                 slot.UpdateVisual();
             }
         }
+        // Trigger upgrade check
+        if (UpgradeSystem.Instance != null)
+            UpgradeSystem.Instance.CheckUpgrade();
+        if (InventoryStats.Instance != null)
+            InventoryStats.Instance.Recalculate();
         return true;
     }
 
@@ -191,6 +200,8 @@ public class Inventory : MonoBehaviour
                 }
             }
         }
+        if (InventoryStats.Instance != null)
+            InventoryStats.Instance.Recalculate();
     }
 
     public Vector2Int? GetGridPositionFromPointer(PointerEventData eventData)

@@ -12,6 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d573395a2e388ce4cb0472e5b877d31f, type: 3}
   m_Name: ItemSpriteConfig
   m_EditorClassIdentifier: 
-  oneBlockSprite: {fileID: 0}
-  twoBlockSprite: {fileID: 0}
-  lShapeSprite: {fileID: 0}
+  oneBlockSprite: {fileID: 21300000, guid: fc85c7bde5a1ecb48bb5dc062f98139b, type: 3}
+  twoBlockSprite: {fileID: 21300000, guid: a61ffabe50ad57248bbc38a5750c2714, type: 3}
+  twoBlockVSprite: {fileID: 21300000, guid: d4847ca1e48d9e6449186f520484b625, type: 3}
+  lShapeSprite: {fileID: 21300000, guid: 423e3c79e2f282d4c823eb84459e61f1, type: 3}
+  oneBlockColor: {r: 0.2, g: 0.6, b: 1, a: 1}
+  twoBlockColor: {r: 0.2, g: 0.8, b: 0.2, a: 1}
+  twoBlockVColor: {r: 0.8, g: 0.2, b: 0.8, a: 1}
+  lShapeColor: {r: 1, g: 0.5, b: 0.1, a: 1}

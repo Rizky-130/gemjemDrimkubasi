@@ -47,22 +47,7 @@ public class TempStorage : MonoBehaviour, IDropHandler
         return false;
     }
     // Ini yang dipanggil saat enemy drop item
-    public bool SpawnItemToTempStorage(InventoryItem item)
-    {
-        if (!HasSpace())
-        {
-            Debug.Log("Temp storage penuh!");
-            return false;
-        }
 
-        // Buat view
-        Inventory.Instance.CreateItemViewPublic(item);
-        Inventory.Instance.UpdateItemViewSize(item);
-
-        // Simpan ke slot
-        bool stored = StoreItem(item);
-        return stored;
-    }
     public int GetEmptySlotIndex()
     {
         for (int i = 0; i < capacity; i++)
@@ -86,6 +71,8 @@ public class TempStorage : MonoBehaviour, IDropHandler
 
         // Pindahkan view item ke dalam slot
         MoveViewToSlot(item, index);
+        if (UpgradeSystem.Instance != null)
+            UpgradeSystem.Instance.CheckUpgrade();
 
         Debug.Log($"{item.itemName} disimpan di TempStorage slot {index}");
         return true;
@@ -159,5 +146,26 @@ public class TempStorage : MonoBehaviour, IDropHandler
 
         if (!stored)
             itemView.isStoredToTemp = false;
+    }
+    // Expose stored item untuk UpgradeSystem
+    public InventoryItem GetStoredItem(int index)
+    {
+        if (index < 0 || index >= capacity) return null;
+        return storedItems[index];
+    }
+
+    // Spawn item langsung ke TempStorage
+    public bool SpawnItemToTempStorage(InventoryItem item)
+    {
+        if (!HasSpace())
+        {
+            Debug.Log("Temp storage penuh!");
+            return false;
+        }
+
+        Inventory.Instance.CreateItemViewPublic(item);
+        Inventory.Instance.UpdateItemViewSize(item);
+
+        return StoreItem(item);
     }
 }
